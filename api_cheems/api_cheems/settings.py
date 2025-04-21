@@ -37,6 +37,8 @@ DEFAULT_FROM_EMAIL = 'arevaloerik2705@gmail.com'
 
 ALLOWED_HOSTS = []
 
+# Linea para configurar el modelo personalizado de usuario
+AUTH_USER_MODEL = 'api_app.Usuario'
 
 # Application definition
 
