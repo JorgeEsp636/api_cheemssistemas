@@ -9,7 +9,7 @@ class UsuarioSerializer(serializers.ModelSerializer):
 class VehiculoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vehiculo
-        fields = '__all__'
+        fields = ['placa', 'empresa', 'disponibilidad']
 
 class ConductorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,9 +17,11 @@ class ConductorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RutaSerializer(serializers.ModelSerializer):
+    vehiculo = VehiculoSerializer(source='id_vehiculos')  # Relación con el vehículo
+
     class Meta:
         model = Ruta
-        fields = '__all__'
+        fields = ['nombre_ruta', 'origen', 'destino', 'horario', 'vehiculo']
 
 class CalificacionSerializer(serializers.ModelSerializer):
     class Meta:
