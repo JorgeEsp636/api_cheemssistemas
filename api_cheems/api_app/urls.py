@@ -12,7 +12,7 @@ urlpatterns = [
     path('conductores/', ConductorList.as_view(), name='listar_conductores'),
     path('conductores/<int:pk>/', ConductorDetail.as_view(), name='detalle_conductor'),
 
-    path('rutas/', RutaList.as_view(), name='listar_rutas'),
+    path('rutas/', RutaList.as_view(), name='rutas-disponibles'),
     path('rutas/<int:pk>/', RutaDetail.as_view(), name='detalle_ruta'),
 
     path('calificaciones/', CalificacionList.as_view(), name='listar_calificaciones'),

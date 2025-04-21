@@ -31,14 +31,18 @@ class ConductorDetail(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ConductorSerializer
 
 class RutaList(generics.ListCreateAPIView):
-    queryset = Ruta.objects.all()
     serializer_class = RutaSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        vehiculo_id = self.request.query_params.get('vehiculo')
-        if vehiculo_id:
-            queryset = queryset.filter(id_vehiculos_id=vehiculo_id)
+        queryset = Ruta.objects.all().select_related('id_vehiculos')  # para optimizar
+        origen = self.request.query_params.get('origen')
+        destino = self.request.query_params.get('destino')
+
+        if origen:
+            queryset = queryset.filter(origen__icontains=origen)
+        if destino:
+            queryset = queryset.filter(destino__icontains=destino)
+
         return queryset
 
 class RutaDetail(generics.RetrieveUpdateDestroyAPIView):

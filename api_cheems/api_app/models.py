@@ -19,6 +19,7 @@ class Vehiculo(models.Model):
     id_vehiculos = models.AutoField(primary_key=True, db_column='id_vehiculos')
     placa = models.CharField(max_length=20, db_column='placa')
     empresa = models.IntegerField(db_column='empresa')
+    disponibilidad = models.BooleanField(default=True, db_column='disponibilidad')  # NUEVO CAMPO
 
     def __str__(self):
         return self.placa
