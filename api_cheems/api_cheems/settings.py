@@ -26,14 +26,13 @@ SECRET_KEY = 'django-insecure-za8efkt*6c=m7p+_q3rbt4n(%(!6--dfzmba%1t9-ht&_zsb%l
 DEBUG = True
 
 # estas son las configuraciones de correo en Django para enviar los tokens
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_HOST_USER = 'arevaloerik2705@gmail.com'
-EMAIL_HOST_PASSWORD = '1076650495e'
-EMAIL_USE_TLS = True
-DEFAULT_FROM_EMAIL = 'arevaloerik2705@gmail.com'
-
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' #Especifica el backend para enviar correos electrónicos. Se esta usando el backend SMTP por el momento (Protocolo Simple de Transferencia de Correo)
+EMAIL_HOST = 'smtp.gmail.com' #Identifica la dirección del servidor SMTP por el momento gmail.
+EMAIL_PORT = 587 #El puerto de la conexión SMTP (el estándar para TLS (Seguridad de la Capa de Transporte) en Gmail es 587)
+EMAIL_HOST_USER = 'arevaloerik2705@gmail.com' #Definir el correo desde donde se enviaran los tokens
+EMAIL_HOST_PASSWORD = '1076650495e' #La contraseña de dicho correo
+EMAIL_USE_TLS = True #Hace el uso del TLS para la conexión
+DEFAULT_FROM_EMAIL = 'arevaloerik2705@gmail.com' #El correo desde donde se enviaran los tokens por defecto
 
 ALLOWED_HOSTS = []
 
