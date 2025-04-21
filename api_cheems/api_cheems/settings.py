@@ -25,6 +25,16 @@ SECRET_KEY = 'django-insecure-za8efkt*6c=m7p+_q3rbt4n(%(!6--dfzmba%1t9-ht&_zsb%l
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# estas son las configuraciones de correo en Django para enviar los tokens
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'arevaloerik2705@gmail.com'
+EMAIL_HOST_PASSWORD = '1076650495e'
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = 'arevaloerik2705@gmail.com'
+
+
 ALLOWED_HOSTS = []
 
 
