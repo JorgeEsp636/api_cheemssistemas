@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import (  UsuarioList, UsuarioDetail, VehiculoList, VehiculoDetail,ConductorList, ConductorDetail, RutaList, RutaDetail, CalificacionList, CalificacionDetail,
-)
+from .views import (  UsuarioList, UsuarioDetail, VehiculoList, VehiculoDetail,ConductorList, ConductorDetail, RutaList, RutaDetail, CalificacionList, CalificacionDetail, RecuperarContrasenaView, RestablecerContrasenaView)
+from rest_framework_simplejwt.views import (TokenView, TokenRefreshView,)
 
 urlpatterns = [
     path('usuarios/', UsuarioList.as_view(), name='listar_usuarios'),
@@ -17,4 +17,11 @@ urlpatterns = [
 
     path('calificaciones/', CalificacionList.as_view(), name='listar_calificaciones'),
     path('calificaciones/<int:pk>/', CalificacionDetail.as_view(), name='detalle_calificacion'),
+    
+    path('auth/recuperar-contrasena/', RecuperarContrasenaView.as_view(), name='recuperar-contrasena'),
+    path('auth/restablecer-contrasena/', RestablecerContrasenaView.as_view(), name='restablecer-contrasena'),
+
+    path('api/token/', TokenView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
 ]

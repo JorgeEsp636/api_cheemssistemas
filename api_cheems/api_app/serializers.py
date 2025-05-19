@@ -4,7 +4,7 @@ from .models import Usuario, Vehiculo, Conductor, Ruta, Calificacion
 class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
-        fields = '__all__'
+        fields = ['id_usuario', 'correo_electronico', 'nombre', 'contrasena']
 
 class VehiculoSerializer(serializers.ModelSerializer):
     class Meta:
