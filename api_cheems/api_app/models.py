@@ -18,7 +18,7 @@ class Usuario(models.Model):
 class Vehiculo(models.Model):
     id_vehiculos = models.AutoField(primary_key=True, db_column='id_vehiculos')
     placa = models.CharField(max_length=20, db_column='placa')
-    empresa = models.IntegerField(db_column='empresa')
+    empresa = models.CharField(max_length=50, db_column='empresa')
 
     def __str__(self):
         return self.placa
