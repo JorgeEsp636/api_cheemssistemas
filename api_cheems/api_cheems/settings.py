@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-za8efkt*6c=m7p+_q3rbt4n(%(!6--dfzmba%1t9-ht&_zsb%l
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# estas son las configuraciones de correo en Django para enviar los tokens
+#Configuraciones de correo en Django para enviar los tokens
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' #Especifica el backend para enviar correos electrónicos. Se esta usando el backend SMTP por el momento (Protocolo Simple de Transferencia de Correo)
 EMAIL_HOST = 'smtp.gmail.com' #Identifica la dirección del servidor SMTP por el momento gmail.
 EMAIL_PORT = 587 #El puerto de la conexión SMTP (el estándar para TLS (Seguridad de la Capa de Transporte) en Gmail es 587)
@@ -53,6 +53,12 @@ INSTALLED_APPS = [
     
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -71,6 +77,7 @@ TEMPLATES = [
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
+            
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',

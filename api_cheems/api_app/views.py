@@ -13,36 +13,43 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
+from rest_framework.permissions import IsAuthenticated
 
 class UsuarioList(generics.ListCreateAPIView):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
+    permission_classes = [IsAuthenticated]
 
 class UsuarioDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
+    permission_classes = [IsAuthenticated]
 
 class VehiculoList(generics.ListCreateAPIView):
     queryset = Vehiculo.objects.all()
     serializer_class = VehiculoSerializer
+    permission_classes = [IsAuthenticated]
 
 class VehiculoDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Vehiculo.objects.all()
     serializer_class = VehiculoSerializer
+    permission_classes = [IsAuthenticated]
 
 class ConductorList(generics.ListCreateAPIView):
     queryset = Conductor.objects.all()
     serializer_class = ConductorSerializer
+    permission_classes = [IsAuthenticated]
 
 class ConductorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Conductor.objects.all()
     serializer_class = ConductorSerializer
+    permission_classes = [IsAuthenticated]
 
 class RutaList(generics.ListCreateAPIView):
     serializer_class = RutaSerializer
 
     def get_queryset(self):
-        queryset = Ruta.objects.all().select_related('id_vehiculos')  # para optimizar
+        queryset = Ruta.objects.all().select_related('id_vehiculos') 
         origen = self.request.query_params.get('origen')
         destino = self.request.query_params.get('destino')
 
@@ -56,10 +63,12 @@ class RutaList(generics.ListCreateAPIView):
 class RutaDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Ruta.objects.all()
     serializer_class = RutaSerializer
+    permission_classes = [IsAuthenticated]
 
 class CalificacionList(generics.ListCreateAPIView):
     queryset = Calificacion.objects.all()
     serializer_class = CalificacionSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -74,6 +83,7 @@ class CalificacionList(generics.ListCreateAPIView):
 class CalificacionDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Calificacion.objects.all()
     serializer_class = CalificacionSerializer
+    permission_classes = [IsAuthenticated]
 
 # Esta es la vista para que el usuario pueda recuperar contraseña
 class RecuperarContrasenaView(APIView):
