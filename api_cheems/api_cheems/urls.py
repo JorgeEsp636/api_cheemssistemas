@@ -1,23 +1,22 @@
 """
 URL configuration for api_cheems project.
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+Este archivo define las rutas URL principales del proyecto.
+Las rutas están organizadas de la siguiente manera:
+
+1. /admin/ - Panel de administración de Django
+2. /api/ - Endpoints de la API REST
+3. /swagger/ - Documentación interactiva de la API (Swagger UI)
+4. /redoc/ - Documentación alternativa de la API (ReDoc)
 """
+
 from django.contrib import admin
 from django.urls import path, include 
 
 urlpatterns = [
+    # Panel de administración de Django
     path('admin/', admin.site.urls),
+    
+    # Endpoints de la API REST
     path('api/', include('api_app.urls')),
 ]

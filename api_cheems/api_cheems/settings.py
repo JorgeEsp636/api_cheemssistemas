@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -53,7 +54,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
     'django_rest_passwordreset',
-    
+    'drf_yasg',
 ]
 
 REST_FRAMEWORK = {
@@ -101,7 +102,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'apicheemsdb',
         'USER': 'postgres',
-        'PASSWORD': '1076650047',
+        'PASSWORD': '1076650495',
         'HOST': 'localhost',
         'PORT': '5432',
 
@@ -149,3 +150,33 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Configuración de JWT
+SIMPLE_JWT = {
+    # Duración de los tokens
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Token de acceso válido por 1 hora
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Token de actualización válido por 1 día
+    'ROTATE_REFRESH_TOKENS': False,                  # No rotar tokens de actualización automáticamente
+    'BLACKLIST_AFTER_ROTATION': True,                # Añadir tokens usados a la lista negra
+    'UPDATE_LAST_LOGIN': False,                      # No actualizar último login
+
+    # Configuración de algoritmos y claves
+    'ALGORITHM': 'HS256',                            # Algoritmo de firma
+    'SIGNING_KEY': SECRET_KEY,                       # Clave de firma (usando SECRET_KEY de Django)
+    'VERIFYING_KEY': None,                           # Clave de verificación (no necesaria para HS256)
+    'AUDIENCE': None,                                # Audiencia del token
+    'ISSUER': None,                                  # Emisor del token
+
+    # Configuración de headers y campos
+    'AUTH_HEADER_TYPES': ('Bearer',),                # Tipo de header de autenticación
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',        # Nombre del header de autenticación
+    'USER_ID_FIELD': 'id_usuario',                   # Campo usado como identificador de usuario
+    'USER_ID_CLAIM': 'user_id',                      # Claim usado para el ID de usuario
+
+    # Configuración de tipos de token
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),  # Clases de token permitidas
+    'TOKEN_TYPE_CLAIM': 'token_type',                # Claim usado para el tipo de token
+
+    # Configuración de JTI (JWT ID)
+    'JTI_CLAIM': 'jti',                              # Claim usado para el ID único del token
+}
