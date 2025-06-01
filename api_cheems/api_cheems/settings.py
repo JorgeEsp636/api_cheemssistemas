@@ -102,7 +102,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'apicheemsdb',
         'USER': 'postgres',
-        'PASSWORD': '1076650495',
+        'PASSWORD': '1076650047',
         'HOST': 'localhost',
         'PORT': '5432',
 
