@@ -24,68 +24,78 @@ api.interceptors.request.use(
 );
 
 export const authService = {
-  login: async (credentials) => {
+  async login(credentials: { email: string; password: string }) {
     try {
-      const response = await api.post('/auth/login/', credentials);
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      const response = await api.post('/auth/token/', credentials);
+      if (response.data.access) {
+        localStorage.setItem('token', response.data.access);
       }
       return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
+    } catch (error: any) {
+      throw error.response?.data?.detail || 'Error al iniciar sesión';
     }
   },
 
-  logout: () => {
-    localStorage.removeItem('token');
-  },
-
-  isAuthenticated: () => {
-    return !!localStorage.getItem('token');
-  },
-
-  register: async (userData) => {
+  async register(userData: { name: string; email: string; password: string }) {
     try {
       const response = await api.post('/auth/register/', userData);
       return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
+    } catch (error: any) {
+      throw error.response?.data?.detail || 'Error al registrar usuario';
     }
   },
+
+  logout() {
+    localStorage.removeItem('token');
+  },
+
+  getCurrentUser() {
+    const token = localStorage.getItem('token');
+    return !!token;
+  }
 };
 
 export const vehiculoService = {
-  getVehiculos: async () => {
+  async getVehiculos() {
     try {
       const response = await api.get('/vehiculos/');
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       throw error.response?.data || error.message;
     }
   },
 
-  createVehiculo: async (vehiculoData) => {
+  async getVehiculo(id: number) {
+    try {
+      const response = await api.get(`/vehiculos/${id}/`);
+      return response.data;
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  async createVehiculo(vehiculoData: any) {
     try {
       const response = await api.post('/vehiculos/', vehiculoData);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       throw error.response?.data || error.message;
     }
   },
 
-  updateVehiculo: async (id, vehiculoData) => {
+  async updateVehiculo(id: number, vehiculoData: any) {
     try {
       const response = await api.put(`/vehiculos/${id}/`, vehiculoData);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       throw error.response?.data || error.message;
     }
   },
 
-  deleteVehiculo: async (id) => {
+  async deleteVehiculo(id: number) {
     try {
       await api.delete(`/vehiculos/${id}/`);
-    } catch (error) {
+    } catch (error: any) {
       throw error.response?.data || error.message;
     }
   },
