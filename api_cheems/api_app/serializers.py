@@ -1,6 +1,23 @@
 from rest_framework import serializers
-from .models import Usuario, Vehiculo, Conductor, Ruta, Calificacion
+from .models import Usuario, Vehiculo, Conductor, Ruta, Calificacion, Zona, Tarifa, Rol
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class RolSerializer(serializers.ModelSerializer):
+    """
+    Serializador para el modelo Rol.
+    
+    Convierte instancias del modelo Rol a JSON y viceversa.
+    Maneja la validación y conversión de datos para operaciones CRUD.
+    
+    Campos:
+        id_rol: Identificador único del rol
+        nombre: Nombre del rol
+        descripcion: Descripción detallada del rol
+    """
+    class Meta:
+        model = Rol
+        fields = ['id_rol', 'nombre', 'descripcion']
+        read_only_fields = ['id_rol']
 
 class UsuarioSerializer(serializers.ModelSerializer):
     """
@@ -13,12 +30,15 @@ class UsuarioSerializer(serializers.ModelSerializer):
         id_usuario: Identificador único del usuario
         correo_electronico: Correo electrónico del usuario
         nombre: Nombre completo del usuario
+        rol: Rol asignado al usuario
         is_active: Estado de activación del usuario
         is_staff: Indica si el usuario es parte del staff
     """
+    rol_nombre = serializers.CharField(source='rol.nombre', read_only=True)
+    
     class Meta:
         model = Usuario
-        fields = ['id_usuario', 'correo_electronico', 'nombre', 'is_active', 'is_staff']
+        fields = ['id_usuario', 'correo_electronico', 'nombre', 'rol', 'rol_nombre', 'is_active', 'is_staff']
         read_only_fields = ['id_usuario']
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -162,3 +182,65 @@ class CalificacionSerializer(serializers.ModelSerializer):
         if value < 1 or value > 5:
             raise serializers.ValidationError("La calificación debe estar entre 1 y 5")
         return value
+
+class ZonaSerializer(serializers.ModelSerializer):
+    """
+    Serializador para el modelo Zona.
+    
+    Convierte instancias del modelo Zona a JSON y viceversa.
+    Maneja la validación y conversión de datos para operaciones CRUD.
+    
+    Campos:
+        id_zona: Identificador único de la zona
+        nombre: Nombre de la zona
+        descripcion: Descripción detallada de la zona
+        activa: Estado de activación de la zona
+    """
+    class Meta:
+        model = Zona
+        fields = ['id_zona', 'nombre', 'descripcion', 'activa']
+        read_only_fields = ['id_zona']
+
+class TarifaSerializer(serializers.ModelSerializer):
+    """
+    Serializador para el modelo Tarifa.
+    
+    Convierte instancias del modelo Tarifa a JSON y viceversa.
+    Incluye validación de datos y manejo de relaciones.
+    
+    Campos:
+        id_tarifa: Identificador único de la tarifa
+        zona_origen: Zona de origen del viaje
+        zona_destino: Zona de destino del viaje
+        precio_base: Precio base del viaje
+        precio_km: Precio por kilómetro adicional
+        activa: Estado de activación de la tarifa
+        fecha_actualizacion: Fecha de última actualización
+        actualizado_por: Usuario que realizó la última actualización
+    """
+    zona_origen_nombre = serializers.CharField(source='zona_origen.nombre', read_only=True)
+    zona_destino_nombre = serializers.CharField(source='zona_destino.nombre', read_only=True)
+    actualizado_por_nombre = serializers.CharField(source='actualizado_por.nombre', read_only=True)
+
+    class Meta:
+        model = Tarifa
+        fields = ['id_tarifa', 'zona_origen', 'zona_origen_nombre', 'zona_destino', 'zona_destino_nombre',
+                 'precio_base', 'precio_km', 'activa', 'fecha_actualizacion', 'actualizado_por', 'actualizado_por_nombre']
+        read_only_fields = ['id_tarifa', 'fecha_actualizacion']
+
+    def validate(self, data):
+        """
+        Valida que la zona de origen y destino sean diferentes.
+        
+        Args:
+            data (dict): Datos a validar
+            
+        Returns:
+            dict: Datos validados
+            
+        Raises:
+            serializers.ValidationError: Si las zonas son iguales
+        """
+        if data.get('zona_origen') == data.get('zona_destino'):
+            raise serializers.ValidationError("La zona de origen y destino no pueden ser la misma")
+        return data

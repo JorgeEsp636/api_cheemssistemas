@@ -24,9 +24,18 @@ Este archivo define todas las rutas de la API REST, organizadas por funcionalida
 5. Calificaciones:
    - /calificaciones/ - Lista y creación de calificaciones
    - /calificaciones/<id>/ - Operaciones CRUD sobre una calificación específica
+
+6. Zonas:
+   - /zonas/ - Lista y creación de zonas
+   - /zonas/<id>/ - Operaciones CRUD sobre una zona específica
+
+7. Tarifas:
+   - /tarifas/ - Lista y creación de tarifas
+   - /tarifas/<id>/ - Operaciones CRUD sobre una tarifa específica
 """
 
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     UsuarioList, UsuarioDetail,
     VehiculoList, VehiculoDetail,
@@ -34,15 +43,28 @@ from .views import (
     RutaList, RutaDetail,
     CalificacionList, CalificacionDetail,
     RecuperarContrasenaView, RestablecerContrasenaView,
-    CustomTokenObtainPairView
+    CustomTokenObtainPairView, RolList, RolDetail,
+    ZonaList, ZonaDetail, TarifaList, TarifaDetail,
+    ImportarRutasView, DescargarPlantillaRutasView
 )
-from rest_framework_simplejwt.views import TokenRefreshView
 
 # Definición de las rutas URL de la API
 urlpatterns = [
     # Rutas para usuarios
     path('usuarios/', UsuarioList.as_view(), name='usuario-list'),
     path('usuarios/<int:pk>/', UsuarioDetail.as_view(), name='usuario-detail'),
+    
+    # Rutas para roles
+    path('roles/', RolList.as_view(), name='rol-list'),
+    path('roles/<int:pk>/', RolDetail.as_view(), name='rol-detail'),
+    
+    # Rutas para zonas
+    path('zonas/', ZonaList.as_view(), name='zona-list'),
+    path('zonas/<int:pk>/', ZonaDetail.as_view(), name='zona-detail'),
+    
+    # Rutas para tarifas
+    path('tarifas/', TarifaList.as_view(), name='tarifa-list'),
+    path('tarifas/<int:pk>/', TarifaDetail.as_view(), name='tarifa-detail'),
     
     # Rutas para vehículos
     path('vehiculos/', VehiculoList.as_view(), name='vehiculo-list'),
@@ -55,6 +77,8 @@ urlpatterns = [
     # Rutas para rutas
     path('rutas/', RutaList.as_view(), name='ruta-list'),
     path('rutas/<int:pk>/', RutaDetail.as_view(), name='ruta-detail'),
+    path('rutas/importar/', ImportarRutasView.as_view(), name='ruta-importar'),
+    path('rutas/plantilla/', DescargarPlantillaRutasView.as_view(), name='ruta-plantilla'),
     
     # Rutas para calificaciones
     path('calificaciones/', CalificacionList.as_view(), name='calificacion-list'),

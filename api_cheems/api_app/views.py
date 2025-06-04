@@ -2,8 +2,8 @@ from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import generics, status
-from .models import Usuario, Vehiculo, Conductor, Ruta, Calificacion
-from .serializers import (UsuarioSerializer,VehiculoSerializer, ConductorSerializer, RutaSerializer,CalificacionSerializer, CustomTokenObtainPairSerializer)
+from .models import Usuario, Vehiculo, Conductor, Ruta, Calificacion, Zona, Tarifa, Rol
+from .serializers import (UsuarioSerializer,VehiculoSerializer, ConductorSerializer, RutaSerializer,CalificacionSerializer, CustomTokenObtainPairSerializer, RolSerializer, ZonaSerializer, TarifaSerializer)
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import Usuario
@@ -12,8 +12,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.views import TokenObtainPairView
+import csv
+import io
+from datetime import datetime
+from django.db import transaction
+from django.http import HttpResponse
 
 class UsuarioList(generics.ListCreateAPIView):
     """
@@ -296,3 +301,280 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     Usa el serializer CustomTokenObtainPairSerializer para autenticar con correo_electronico y contrasena.
     """
     serializer_class = CustomTokenObtainPairSerializer
+
+class RolList(generics.ListCreateAPIView):
+    """
+    Vista para manejar la lista de roles y su creación.
+    
+    Esta vista permite:
+    - GET: Obtener la lista de todos los roles registrados
+    - POST: Crear un nuevo rol
+    
+    Requiere autenticación y permisos de administrador para acceder.
+    """
+    queryset = Rol.objects.all()
+    serializer_class = RolSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+class RolDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Vista para manejar operaciones CRUD sobre un rol específico.
+    
+    Esta vista permite:
+    - GET: Obtener los detalles de un rol específico
+    - PUT/PATCH: Actualizar los datos de un rol
+    - DELETE: Eliminar un rol
+    
+    Requiere autenticación y permisos de administrador para acceder.
+    """
+    queryset = Rol.objects.all()
+    serializer_class = RolSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+class ZonaList(generics.ListCreateAPIView):
+    """
+    Vista para manejar la lista de zonas y su creación.
+    
+    Esta vista permite:
+    - GET: Obtener la lista de todas las zonas registradas
+    - POST: Crear una nueva zona
+    
+    Requiere autenticación y permisos de administrador para acceder.
+    """
+    queryset = Zona.objects.all()
+    serializer_class = ZonaSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+class ZonaDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Vista para manejar operaciones CRUD sobre una zona específica.
+    
+    Esta vista permite:
+    - GET: Obtener los detalles de una zona específica
+    - PUT/PATCH: Actualizar los datos de una zona
+    - DELETE: Eliminar una zona
+    
+    Requiere autenticación y permisos de administrador para acceder.
+    """
+    queryset = Zona.objects.all()
+    serializer_class = ZonaSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+class TarifaList(generics.ListCreateAPIView):
+    """
+    Vista para manejar la lista de tarifas y su creación.
+    
+    Esta vista permite:
+    - GET: Obtener la lista de todas las tarifas registradas
+    - POST: Crear una nueva tarifa
+    
+    Características especiales:
+    - Permite filtrar tarifas por zona de origen y destino
+    - Requiere autenticación y permisos de administrador
+    """
+    serializer_class = TarifaSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get_queryset(self):
+        """
+        Método para obtener y filtrar las tarifas.
+        
+        Filtros disponibles:
+        - zona_origen: Filtra tarifas por ID de zona de origen
+        - zona_destino: Filtra tarifas por ID de zona de destino
+        - activa: Filtra tarifas por estado de activación
+        
+        Returns:
+            QuerySet: Conjunto de tarifas filtradas según los parámetros
+        """
+        queryset = Tarifa.objects.all().select_related('zona_origen', 'zona_destino', 'actualizado_por')
+        zona_origen = self.request.query_params.get('zona_origen')
+        zona_destino = self.request.query_params.get('zona_destino')
+        activa = self.request.query_params.get('activa')
+
+        if zona_origen:
+            queryset = queryset.filter(zona_origen_id=zona_origen)
+        if zona_destino:
+            queryset = queryset.filter(zona_destino_id=zona_destino)
+        if activa is not None:
+            queryset = queryset.filter(activa=activa.lower() == 'true')
+
+        return queryset
+
+    def perform_create(self, serializer):
+        """
+        Método para crear una nueva tarifa.
+        
+        Args:
+            serializer: Serializador con los datos de la tarifa
+        """
+        serializer.save(actualizado_por=self.request.user)
+
+class TarifaDetail(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Vista para manejar operaciones CRUD sobre una tarifa específica.
+    
+    Esta vista permite:
+    - GET: Obtener los detalles de una tarifa específica
+    - PUT/PATCH: Actualizar los datos de una tarifa
+    - DELETE: Eliminar una tarifa
+    
+    Requiere autenticación y permisos de administrador para acceder.
+    """
+    queryset = Tarifa.objects.all()
+    serializer_class = TarifaSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def perform_update(self, serializer):
+        """
+        Método para actualizar una tarifa existente.
+        
+        Args:
+            serializer: Serializador con los datos actualizados de la tarifa
+        """
+        serializer.save(actualizado_por=self.request.user)
+
+class ImportarRutasView(APIView):
+    """
+    Vista para importar rutas y horarios desde archivos CSV.
+    
+    Esta vista permite:
+    - POST: Importar rutas y horarios desde un archivo CSV
+    
+    El archivo CSV debe tener el siguiente formato:
+    - nombre_ruta: Nombre de la ruta
+    - origen: Punto de origen
+    - destino: Punto de destino
+    - horario: Horario en formato HH:MM
+    - placa_vehiculo: Placa del vehículo asignado
+    
+    Requiere autenticación y permisos de administrador para acceder.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        """
+        Método para procesar la importación de rutas desde CSV.
+        
+        Args:
+            request: Objeto Request con el archivo CSV
+            
+        Returns:
+            Response: Respuesta con el resultado de la importación
+        """
+        if 'archivo' not in request.FILES:
+            return Response(
+                {'error': 'No se proporcionó ningún archivo'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        archivo = request.FILES['archivo']
+        if not archivo.name.endswith('.csv'):
+            return Response(
+                {'error': 'El archivo debe ser de tipo CSV'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Decodificar el archivo CSV
+            contenido = archivo.read().decode('utf-8')
+            csv_file = io.StringIO(contenido)
+            reader = csv.DictReader(csv_file)
+
+            # Listas para almacenar resultados
+            rutas_creadas = []
+            errores = []
+
+            # Usar transacción para asegurar la integridad de los datos
+            with transaction.atomic():
+                for fila in reader:
+                    try:
+                        # Validar campos requeridos
+                        campos_requeridos = ['nombre_ruta', 'origen', 'destino', 'horario', 'placa_vehiculo']
+                        for campo in campos_requeridos:
+                            if campo not in fila or not fila[campo]:
+                                raise ValueError(f'El campo {campo} es requerido')
+
+                        # Buscar o crear el vehículo
+                        vehiculo, _ = Vehiculo.objects.get_or_create(
+                            placa=fila['placa_vehiculo'],
+                            defaults={'empresa': 1, 'disponibilidad': True}
+                        )
+
+                        # Convertir horario a objeto time
+                        try:
+                            horario = datetime.strptime(fila['horario'], '%H:%M').time()
+                        except ValueError:
+                            raise ValueError(f'Formato de horario inválido: {fila["horario"]}')
+
+                        # Crear la ruta
+                        ruta = Ruta.objects.create(
+                            nombre_ruta=fila['nombre_ruta'],
+                            origen=fila['origen'],
+                            destino=fila['destino'],
+                            horario=horario,
+                            id_vehiculos=vehiculo
+                        )
+
+                        rutas_creadas.append({
+                            'id': ruta.id_ruta,
+                            'nombre': ruta.nombre_ruta,
+                            'origen': ruta.origen,
+                            'destino': ruta.destino,
+                            'horario': ruta.horario.strftime('%H:%M')
+                        })
+
+                    except Exception as e:
+                        errores.append({
+                            'fila': reader.line_num,
+                            'error': str(e)
+                        })
+
+            return Response({
+                'mensaje': f'Se importaron {len(rutas_creadas)} rutas exitosamente',
+                'rutas_creadas': rutas_creadas,
+                'errores': errores
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {'error': f'Error al procesar el archivo: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class DescargarPlantillaRutasView(APIView):
+    """
+    Vista para descargar una plantilla CSV para importar rutas.
+    
+    Esta vista permite:
+    - GET: Descargar una plantilla CSV con los campos necesarios
+    
+    Requiere autenticación y permisos de administrador para acceder.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        """
+        Método para generar y descargar la plantilla CSV.
+        
+        Returns:
+            HttpResponse: Archivo CSV con la plantilla
+        """
+        # Crear un buffer en memoria para el archivo CSV
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Escribir encabezados
+        writer.writerow(['nombre_ruta', 'origen', 'destino', 'horario', 'placa_vehiculo'])
+        
+        # Escribir una fila de ejemplo
+        writer.writerow(['Ruta 1', 'Zona Norte', 'Zona Sur', '08:00', 'ABC123'])
+        
+        # Preparar la respuesta
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='text/csv'
+        )
+        response['Content-Disposition'] = 'attachment; filename="plantilla_rutas.csv"'
+        
+        return response

@@ -1,6 +1,29 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
+class Rol(models.Model):
+    """
+    Modelo para representar roles de usuario en el sistema.
+    
+    Campos:
+        id_rol: Identificador único del rol
+        nombre: Nombre del rol (pasajero, conductor, administrador)
+        descripcion: Descripción detallada del rol
+    """
+    id_rol = models.AutoField(primary_key=True, db_column='id_rol')
+    nombre = models.CharField(max_length=50, db_column='nombre', unique=True)
+    descripcion = models.TextField(db_column='descripcion')
+
+    def __str__(self):
+        """Retorna el nombre del rol como representación en string."""
+        return self.nombre
+
+    class Meta:
+        """Metadatos del modelo Rol."""
+        db_table = 'Roles'
+        verbose_name = 'Rol'
+        verbose_name_plural = 'Roles'
+
 #creación de manager para los usuarios
 class UsuarioManager(BaseUserManager):
     """
@@ -74,6 +97,7 @@ class Usuario(AbstractBaseUser):
         id_usuario: Identificador único del usuario
         correo_electronico: Correo electrónico del usuario (identificador único)
         nombre: Nombre completo del usuario
+        rol: Rol asignado al usuario (pasajero, conductor, administrador)
         is_active: Indica si el usuario está activo
         is_staff: Indica si el usuario es parte del staff
         is_superuser: Indica si el usuario es superusuario
@@ -81,6 +105,7 @@ class Usuario(AbstractBaseUser):
     id_usuario = models.AutoField(primary_key=True, db_column='id_usuario')
     correo_electronico = models.EmailField(unique=True, db_column='correo_electronico')
     nombre = models.CharField(max_length=100, db_column='nombre')
+    rol = models.ForeignKey(Rol, on_delete=models.PROTECT, db_column='Roles_id_rol', null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -211,3 +236,62 @@ class Calificacion(models.Model):
         db_table = 'Calificaciones'
         verbose_name = 'Calificación'
         verbose_name_plural = 'Calificaciones'
+
+class Zona(models.Model):
+    """
+    Modelo para representar zonas geográficas en el sistema.
+    
+    Campos:
+        id_zona: Identificador único de la zona
+        nombre: Nombre de la zona
+        descripcion: Descripción detallada de la zona
+        activa: Indica si la zona está activa para tarifas
+    """
+    id_zona = models.AutoField(primary_key=True, db_column='id_zona')
+    nombre = models.CharField(max_length=100, db_column='nombre')
+    descripcion = models.TextField(db_column='descripcion')
+    activa = models.BooleanField(default=True, db_column='activa')
+
+    def __str__(self):
+        """Retorna el nombre de la zona como representación en string."""
+        return self.nombre
+
+    class Meta:
+        """Metadatos del modelo Zona."""
+        db_table = 'Zonas'
+        verbose_name = 'Zona'
+        verbose_name_plural = 'Zonas'
+
+class Tarifa(models.Model):
+    """
+    Modelo para representar tarifas dinámicas por zona.
+    
+    Campos:
+        id_tarifa: Identificador único de la tarifa
+        zona_origen: Zona de origen del viaje
+        zona_destino: Zona de destino del viaje
+        precio_base: Precio base del viaje
+        precio_km: Precio por kilómetro adicional
+        activa: Indica si la tarifa está activa
+        fecha_actualizacion: Fecha de última actualización
+        actualizado_por: Usuario que realizó la última actualización
+    """
+    id_tarifa = models.AutoField(primary_key=True, db_column='id_tarifa')
+    zona_origen = models.ForeignKey(Zona, on_delete=models.PROTECT, related_name='tarifas_origen', db_column='Zonas_id_origen')
+    zona_destino = models.ForeignKey(Zona, on_delete=models.PROTECT, related_name='tarifas_destino', db_column='Zonas_id_destino')
+    precio_base = models.DecimalField(max_digits=10, decimal_places=2, db_column='precio_base')
+    precio_km = models.DecimalField(max_digits=10, decimal_places=2, db_column='precio_km')
+    activa = models.BooleanField(default=True, db_column='activa')
+    fecha_actualizacion = models.DateTimeField(auto_now=True, db_column='fecha_actualizacion')
+    actualizado_por = models.ForeignKey(Usuario, on_delete=models.PROTECT, db_column='Usuarios_id_actualizado_por')
+
+    def __str__(self):
+        """Retorna la descripción de la tarifa como representación en string."""
+        return f"Tarifa {self.zona_origen} - {self.zona_destino}"
+
+    class Meta:
+        """Metadatos del modelo Tarifa."""
+        db_table = 'Tarifas'
+        verbose_name = 'Tarifa'
+        verbose_name_plural = 'Tarifas'
+        unique_together = ['zona_origen', 'zona_destino']
