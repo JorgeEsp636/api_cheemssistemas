@@ -45,7 +45,12 @@ from .views import (
     RecuperarContrasenaView, RestablecerContrasenaView,
     CustomTokenObtainPairView, RolList, RolDetail,
     ZonaList, ZonaDetail, TarifaList, TarifaDetail,
-    ImportarRutasView, DescargarPlantillaRutasView
+    ImportarRutasView, DescargarPlantillaRutasView,
+    ViajeList, ViajeDetail, RutaFavoritaList, RutaFavoritaDetail,
+    CalificacionConductorList, CalificacionConductorDetail,
+    DashboardEmpresaView, EstadisticaEmpresaView,
+    VersionSistemaList, VersionSistemaDetail,
+    PQRSList, PQRSDetail, PQRSAdminList
 )
 
 # Definición de las rutas URL de la API
@@ -83,6 +88,29 @@ urlpatterns = [
     # Rutas para calificaciones
     path('calificaciones/', CalificacionList.as_view(), name='calificacion-list'),
     path('calificaciones/<int:pk>/', CalificacionDetail.as_view(), name='calificacion-detail'),
+    
+    # Rutas para viajes
+    path('viajes/', ViajeList.as_view(), name='viaje-list'),
+    path('viajes/<int:pk>/', ViajeDetail.as_view(), name='viaje-detail'),
+    
+    # Rutas para rutas favoritas
+    path('rutas-favoritas/', RutaFavoritaList.as_view(), name='ruta-favorita-list'),
+    path('rutas-favoritas/<int:pk>/', RutaFavoritaDetail.as_view(), name='ruta-favorita-detail'),
+    path('calificaciones-conductores/', CalificacionConductorList.as_view(), name='calificacion-conductor-list'),
+    path('calificaciones-conductores/<int:pk>/', CalificacionConductorDetail.as_view(), name='calificacion-conductor-detail'),
+    
+    # Rutas para el dashboard de empresas
+    path('dashboard/empresa/', DashboardEmpresaView.as_view(), name='dashboard-empresa'),
+    path('estadisticas/empresa/', EstadisticaEmpresaView.as_view(), name='estadistica-empresa-list'),
+    
+    # Rutas para el control de versiones
+    path('versiones/', VersionSistemaList.as_view(), name='version-sistema-list'),
+    path('versiones/<int:pk>/', VersionSistemaDetail.as_view(), name='version-sistema-detail'),
+    
+    # Rutas para PQRS
+    path('pqrs/', PQRSList.as_view(), name='pqrs-list'),
+    path('pqrs/<int:pk>/', PQRSDetail.as_view(), name='pqrs-detail'),
+    path('pqrs/admin/', PQRSAdminList.as_view(), name='pqrs-admin-list'),
     
     # Rutas para autenticación y recuperación de contraseña
     path('auth/recuperar-contrasena/', RecuperarContrasenaView.as_view(), name='recuperar-contrasena'),
