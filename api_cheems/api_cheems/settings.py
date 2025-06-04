@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,21 +26,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-za8efkt*6c=m7p+_q3rbt4n(%(!6--dfzmba%1t9-ht&_zsb%l'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 #Configuraciones de correo en Django para enviar los tokens
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend' #Especifica el backend para enviar correos electrónicos. Se esta usando el backend SMTP por el momento (Protocolo Simple de Transferencia de Correo)
-EMAIL_HOST = 'smtp.gmail.com' #Identifica la dirección del servidor SMTP por el momento gmail.
-EMAIL_PORT = 587 #El puerto de la conexión SMTP (el estándar para TLS (Seguridad de la Capa de Transporte) en Gmail es 587)
-EMAIL_HOST_USER = 'arevaloerik2705@gmail.com' #Definir el correo desde donde se enviaran los tokens
-EMAIL_HOST_PASSWORD = '1076650495e' #La contraseña de dicho correo
-EMAIL_USE_TLS = True #Hace el uso del TLS para la conexión
-DEFAULT_FROM_EMAIL = 'arevaloerik2705@gmail.com' #El correo desde donde se enviaran los tokens por defecto
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND')
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 # Linea para configurar el modelo personalizado de usuario
 AUTH_USER_MODEL = 'api_app.Usuario'
@@ -99,13 +104,12 @@ WSGI_APPLICATION = 'api_cheems.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'apicheemsdb',
-        'USER': 'postgres',
-        'PASSWORD': '1076650047',
-        'HOST': 'localhost',
-        'PORT': '5432',
-
+        'ENGINE': os.getenv('DB_ENGINE'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
@@ -153,30 +157,21 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Configuración de JWT
 SIMPLE_JWT = {
-    # Duración de los tokens
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # Token de acceso válido por 1 hora
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),     # Token de actualización válido por 1 día
-    'ROTATE_REFRESH_TOKENS': False,                  # No rotar tokens de actualización automáticamente
-    'BLACKLIST_AFTER_ROTATION': True,                # Añadir tokens usados a la lista negra
-    'UPDATE_LAST_LOGIN': False,                      # No actualizar último login
-
-    # Configuración de algoritmos y claves
-    'ALGORITHM': 'HS256',                            # Algoritmo de firma
-    'SIGNING_KEY': SECRET_KEY,                       # Clave de firma (usando SECRET_KEY de Django)
-    'VERIFYING_KEY': None,                           # Clave de verificación (no necesaria para HS256)
-    'AUDIENCE': None,                                # Audiencia del token
-    'ISSUER': None,                                  # Emisor del token
-
-    # Configuración de headers y campos
-    'AUTH_HEADER_TYPES': ('Bearer',),                # Tipo de header de autenticación
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',        # Nombre del header de autenticación
-    'USER_ID_FIELD': 'id_usuario',                   # Campo usado como identificador de usuario
-    'USER_ID_CLAIM': 'user_id',                      # Claim usado para el ID de usuario
-
-    # Configuración de tipos de token
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),  # Clases de token permitidas
-    'TOKEN_TYPE_CLAIM': 'token_type',                # Claim usado para el tipo de token
-
-    # Configuración de JTI (JWT ID)
-    'JTI_CLAIM': 'jti',                              # Claim usado para el ID único del token
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=int(os.getenv('JWT_ACCESS_TOKEN_LIFETIME', 60))),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=int(os.getenv('JWT_REFRESH_TOKEN_LIFETIME', 1))),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': os.getenv('JWT_SECRET_KEY'),
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id_usuario',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'JTI_CLAIM': 'jti',
 }
