@@ -476,30 +476,26 @@ class ImportarRutasView(APIView):
             )
 
         try:
-            # Decodificar el archivo CSV
             contenido = archivo.read().decode('utf-8')
             csv_file = io.StringIO(contenido)
             reader = csv.DictReader(csv_file)
 
-            # Listas para almacenar resultados
             rutas_creadas = []
             errores = []
 
-            # Usar transacción para asegurar la integridad de los datos
             with transaction.atomic():
                 for fila in reader:
                     try:
-                        # Validar campos requeridos
                         campos_requeridos = ['nombre_ruta', 'origen', 'destino', 'horario', 'placa_vehiculo']
                         for campo in campos_requeridos:
                             if campo not in fila or not fila[campo]:
                                 raise ValueError(f'El campo {campo} es requerido')
 
-                        # Buscar o crear el vehículo
-                        vehiculo, _ = Vehiculo.objects.get_or_create(
-                            placa=fila['placa_vehiculo'],
-                            defaults={'empresa': 1, 'disponibilidad': True}
-                        )
+                        # Buscar el vehículo, no crearlo automáticamente
+                        try:
+                            vehiculo = Vehiculo.objects.get(placa=fila['placa_vehiculo'])
+                        except Vehiculo.DoesNotExist:
+                            raise ValueError(f'El vehículo con placa {fila["placa_vehiculo"]} no existe')
 
                         # Convertir horario a objeto time
                         try:
@@ -507,7 +503,6 @@ class ImportarRutasView(APIView):
                         except ValueError:
                             raise ValueError(f'Formato de horario inválido: {fila["horario"]}')
 
-                        # Crear la ruta
                         ruta = Ruta.objects.create(
                             nombre_ruta=fila['nombre_ruta'],
                             origen=fila['origen'],
@@ -515,7 +510,6 @@ class ImportarRutasView(APIView):
                             horario=horario,
                             id_vehiculos=vehiculo
                         )
-
                         rutas_creadas.append({
                             'id': ruta.id_ruta,
                             'nombre': ruta.nombre_ruta,
@@ -523,18 +517,28 @@ class ImportarRutasView(APIView):
                             'destino': ruta.destino,
                             'horario': ruta.horario.strftime('%H:%M')
                         })
-
                     except Exception as e:
                         errores.append({
                             'fila': reader.line_num,
                             'error': str(e)
                         })
 
-            return Response({
-                'mensaje': f'Se importaron {len(rutas_creadas)} rutas exitosamente',
-                'rutas_creadas': rutas_creadas,
-                'errores': errores
-            }, status=status.HTTP_200_OK)
+            if rutas_creadas and errores:
+                return Response({
+                    'mensaje': f'Se importaron {len(rutas_creadas)} rutas, pero hubo errores en algunas filas.',
+                    'rutas_creadas': rutas_creadas,
+                    'errores': errores
+                }, status=207)  # 207 Multi-Status
+            elif rutas_creadas:
+                return Response({
+                    'mensaje': f'Se importaron {len(rutas_creadas)} rutas exitosamente',
+                    'rutas_creadas': rutas_creadas
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error': 'No se pudo importar ninguna ruta',
+                    'errores': errores
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             return Response(

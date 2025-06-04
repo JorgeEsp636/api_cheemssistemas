@@ -226,7 +226,7 @@ class TarifaSerializer(serializers.ModelSerializer):
         model = Tarifa
         fields = ['id_tarifa', 'zona_origen', 'zona_origen_nombre', 'zona_destino', 'zona_destino_nombre',
                  'precio_base', 'precio_km', 'activa', 'fecha_actualizacion', 'actualizado_por', 'actualizado_por_nombre']
-        read_only_fields = ['id_tarifa', 'fecha_actualizacion']
+        read_only_fields = ['id_tarifa', 'fecha_actualizacion', 'actualizado_por']
 
     def validate(self, data):
         """
