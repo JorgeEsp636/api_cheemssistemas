@@ -97,10 +97,37 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return super().to_internal_value(data)
 
     def validate(self, attrs):
-        correo_electronico = attrs.get('correo_electronico')
-        if not Usuario.objects.filter(correo_electronico=correo_electronico).exists():
-            raise serializers.ValidationError({'correo_electronico': 'Usuario no encontrado'})
-        return super().validate(attrs)
+        """
+        Valida las credenciales del usuario.
+        
+        Args:
+            attrs (dict): Atributos a validar
+            
+        Returns:
+            dict: Atributos validados
+            
+        Raises:
+            serializers.ValidationError: Si las credenciales son inválidas
+        """
+        try:
+            # Primero verificamos si el usuario existe
+            correo_electronico = attrs.get('correo_electronico')
+            if not Usuario.objects.filter(correo_electronico=correo_electronico).exists():
+                raise serializers.ValidationError({'correo_electronico': 'Usuario no encontrado'})
+            
+            # Llamamos al método validate del padre para validar la contraseña
+            data = super().validate(attrs)
+            
+            # Verificamos si el usuario está activo
+            user = self.user
+            if not user.is_active:
+                raise serializers.ValidationError({'correo_electronico': 'Usuario inactivo'})
+            
+            return data
+        except serializers.ValidationError as e:
+            raise e
+        except Exception as e:
+            raise serializers.ValidationError({'correo_electronico': 'Credenciales inválidas'})
 
 class VehiculoSerializer(serializers.ModelSerializer):
     """
