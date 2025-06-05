@@ -97,15 +97,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return super().to_internal_value(data)
 
     def validate(self, attrs):
-        """
-        Valida los datos de autenticación.
-        
-        Args:
-            attrs (dict): Atributos validados
-            
-        Returns:
-            dict: Datos validados con tokens de acceso
-        """
+        correo_electronico = attrs.get('correo_electronico')
+        if not Usuario.objects.filter(correo_electronico=correo_electronico).exists():
+            raise serializers.ValidationError({'correo_electronico': 'Usuario no encontrado'})
         return super().validate(attrs)
 
 class VehiculoSerializer(serializers.ModelSerializer):

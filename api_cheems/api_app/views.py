@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 import csv
 import io
@@ -1343,3 +1343,44 @@ class PQRSAdminList(generics.ListAPIView):
         if usuario_id:
             queryset = queryset.filter(id_usuario_id=usuario_id)
         return queryset
+
+class RegistroUsuarioView(APIView):
+    """
+    Vista para el registro de nuevos usuarios.
+    No requiere autenticación.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = UsuarioSerializer(data=request.data)
+        if serializer.is_valid():
+            # Obtener el rol de pasajero por defecto
+            try:
+                rol_pasajero = Rol.objects.get(nombre='Pasajero')
+            except Rol.DoesNotExist:
+                return Response(
+                    {'error': 'El rol de pasajero no existe en el sistema'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            # Crear el usuario con el rol de pasajero
+            usuario = serializer.save(rol=rol_pasajero)
+            return Response(
+                {
+                    'message': 'Usuario registrado exitosamente',
+                    'usuario': UsuarioSerializer(usuario).data
+                },
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class UsuarioActualView(APIView):
+    """
+    Vista para obtener la información del usuario actual.
+    Requiere autenticación.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UsuarioSerializer(request.user)
+        return Response(serializer.data)

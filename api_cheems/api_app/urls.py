@@ -50,11 +50,18 @@ from .views import (
     CalificacionConductorList, CalificacionConductorDetail,
     DashboardEmpresaView, EstadisticaEmpresaView,
     VersionSistemaList, VersionSistemaDetail,
-    PQRSList, PQRSDetail, PQRSAdminList
+    PQRSList, PQRSDetail, PQRSAdminList,
+    RegistroUsuarioView, UsuarioActualView
 )
 
 # Definición de las rutas URL de la API
 urlpatterns = [
+    # Rutas para autenticación
+    path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('registro/', RegistroUsuarioView.as_view(), name='registro'),
+    path('usuarios/me/', UsuarioActualView.as_view(), name='usuario-actual'),
+    
     # Rutas para usuarios
     path('usuarios/', UsuarioList.as_view(), name='usuario-list'),
     path('usuarios/<int:pk>/', UsuarioDetail.as_view(), name='usuario-detail'),
@@ -115,7 +122,4 @@ urlpatterns = [
     # Rutas para autenticación y recuperación de contraseña
     path('auth/recuperar-contrasena/', RecuperarContrasenaView.as_view(), name='recuperar-contrasena'),
     path('auth/restablecer-contrasena/', RestablecerContrasenaView.as_view(), name='restablecer-contrasena'),
-
-    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
