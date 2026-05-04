@@ -67,30 +67,12 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     1. Usa correo_electronico en lugar de username como identificador
     2. Acepta contrasena en lugar de password
     3. Mapea internamente contrasena a password para la autenticación
-    
-    El mapeo se realiza en el método to_internal_value para asegurar que el campo
-    password esté disponible antes de la validación.
-    
-    Campos esperados:
-        correo_electronico: Correo electrónico del usuario
-        contrasena: Contraseña del usuario
     """
     username_field = 'correo_electronico'
     password_field = 'contrasena'
 
     def to_internal_value(self, data):
-        """
-        Convierte los datos de entrada antes de la validación.
-        
-        Mapea el campo 'contrasena' a 'password' para que sea compatible
-        con el sistema de autenticación de Django.
-        
-        Args:
-            data (dict): Datos de entrada del request
-            
-        Returns:
-            dict: Datos procesados con el campo password
-        """
+        # Mapea 'contrasena' a 'password' para compatibilidad con Django
         if 'contrasena' in data:
             data = data.copy()
             data['password'] = data.pop('contrasena')
@@ -123,6 +105,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             if not user.is_active:
                 raise serializers.ValidationError({'correo_electronico': 'Usuario inactivo'})
             
+            # Permitir login aunque no tenga rol si es superusuario
+            if not user.rol and not user.is_superuser:
+                raise serializers.ValidationError({'correo_electronico': 'El usuario no tiene un rol asignado'})
+            
             return data
         except serializers.ValidationError as e:
             raise e
@@ -139,12 +125,17 @@ class VehiculoSerializer(serializers.ModelSerializer):
     Campos:
         id_vehiculos: Identificador único del vehículo
         placa: Placa del vehículo
-        empresa: ID de la empresa propietaria
+        empresa: Empresa propietaria
         disponibilidad: Estado de disponibilidad del vehículo
     """
     class Meta:
         model = Vehiculo
-        fields = ['id_vehiculos', 'placa', 'empresa', 'disponibilidad']
+        fields = [
+            'id_vehiculos',
+            'placa',
+            'empresa',
+            'disponibilidad'
+        ]
         read_only_fields = ['id_vehiculos']
 
 class ConductorSerializer(serializers.ModelSerializer):
@@ -257,14 +248,18 @@ class TarifaSerializer(serializers.ModelSerializer):
         fecha_actualizacion: Fecha de última actualización
         actualizado_por: Usuario que realizó la última actualización
     """
-    zona_origen_nombre = serializers.CharField(source='zona_origen.nombre', read_only=True)
-    zona_destino_nombre = serializers.CharField(source='zona_destino.nombre', read_only=True)
-    actualizado_por_nombre = serializers.CharField(source='actualizado_por.nombre', read_only=True)
-
     class Meta:
         model = Tarifa
-        fields = ['id_tarifa', 'zona_origen', 'zona_origen_nombre', 'zona_destino', 'zona_destino_nombre',
-                 'precio_base', 'precio_km', 'activa', 'fecha_actualizacion', 'actualizado_por', 'actualizado_por_nombre']
+        fields = [
+            'id_tarifa',
+            'zona_origen',
+            'zona_destino',
+            'precio_base',
+            'precio_km',
+            'activa',
+            'fecha_actualizacion',
+            'actualizado_por'
+        ]
         read_only_fields = ['id_tarifa', 'fecha_actualizacion', 'actualizado_por']
 
     def validate(self, data):
@@ -549,7 +544,7 @@ class PQRSSerializer(serializers.ModelSerializer):
             'descripcion', 'fecha_creacion', 'estado', 'respuesta',
             'fecha_respuesta', 'respondido_por', 'respondido_por_nombre'
         ]
-        read_only_fields = ['id_pqrs', 'fecha_creacion', 'estado', 'fecha_respuesta']
+        read_only_fields = ['id_pqrs', 'fecha_creacion', 'estado', 'fecha_respuesta', 'id_usuario']
         
     def validate_tipo(self, value):
         """
