@@ -34,7 +34,7 @@ class UsuarioList(generics.ListCreateAPIView):
     """
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated] 
 
 class UsuarioDetail(generics.RetrieveUpdateDestroyAPIView):
     """
@@ -49,7 +49,7 @@ class UsuarioDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Usuario.objects.all()
     serializer_class = UsuarioSerializer
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
 class VehiculoList(generics.ListCreateAPIView):
     """
@@ -242,7 +242,7 @@ class RecuperarContrasenaView(APIView):
         try:
             usuario = Usuario.objects.get(correo_electronico=email)
             token = generar_token(email)
-            link = f"http://localhost:8000/api/auth/restablecer-contrasena/?token={token}"
+            link = f"http://localhost:3000/reset-password?token={token}"
             send_mail(
                 subject="Recupera tu contraseña",
                 message=f"Haz clic en el siguiente enlace para restablecer tu contraseña: {link}",
@@ -455,7 +455,7 @@ class TarifaList(generics.ListCreateAPIView):
     - Requiere autenticación y permisos de administrador
     """
     serializer_class = TarifaSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """
@@ -469,15 +469,15 @@ class TarifaList(generics.ListCreateAPIView):
         Returns:
             QuerySet: Conjunto de tarifas filtradas según los parámetros
         """
-        queryset = Tarifa.objects.all().select_related('zona_origen', 'zona_destino', 'actualizado_por')
+        queryset = Tarifa.objects.all().select_related('actualizado_por')
         zona_origen = self.request.query_params.get('zona_origen')
         zona_destino = self.request.query_params.get('zona_destino')
         activa = self.request.query_params.get('activa')
 
         if zona_origen:
-            queryset = queryset.filter(zona_origen_id=zona_origen)
+            queryset = queryset.filter(zona_origen=zona_origen)
         if zona_destino:
-            queryset = queryset.filter(zona_destino_id=zona_destino)
+            queryset = queryset.filter(zona_destino=zona_destino)
         if activa is not None:
             queryset = queryset.filter(activa=activa.lower() == 'true')
 
@@ -1354,17 +1354,27 @@ class RegistroUsuarioView(APIView):
     def post(self, request):
         serializer = UsuarioSerializer(data=request.data)
         if serializer.is_valid():
-            # Obtener el rol de pasajero por defecto
-            try:
-                rol_pasajero = Rol.objects.get(nombre='Pasajero')
-            except Rol.DoesNotExist:
-                return Response(
-                    {'error': 'El rol de pasajero no existe en el sistema'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-
-            # Crear el usuario con el rol de pasajero
-            usuario = serializer.save(rol=rol_pasajero)
+            # Asignar el rol enviado por el frontend
+            rol_id = request.data.get('rol')
+            if rol_id:
+                try:
+                    rol_obj = Rol.objects.get(id_rol=rol_id)
+                except Rol.DoesNotExist:
+                    return Response(
+                        {'error': 'El rol especificado no existe en el sistema'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            else:
+                # Si no se especifica rol, usar pasajero por defecto (id_rol=1)
+                try:
+                    rol_obj = Rol.objects.get(id_rol=1)
+                except Rol.DoesNotExist:
+                    return Response(
+                        {'error': 'El rol de pasajero no existe en el sistema'},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+            # Crear el usuario con el rol adecuado
+            usuario = serializer.save(rol=rol_obj)
             return Response(
                 {
                     'message': 'Usuario registrado exitosamente',

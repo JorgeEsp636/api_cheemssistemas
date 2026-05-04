@@ -84,6 +84,13 @@ class UsuarioManager(BaseUserManager):
         """
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+        
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+        
         return self.create_user(correo_electronico, contrasena, **extra_fields)
 
 # modificación del modelo Usuario enlazado a AbstractBaseUser
@@ -135,6 +142,14 @@ class Usuario(AbstractBaseUser):
         """Retorna el nombre del usuario como representación en string."""
         return self.nombre
 
+    def has_perm(self, perm, obj=None):
+        """Permite todos los permisos para superusuarios."""
+        return self.is_superuser
+
+    def has_module_perms(self, app_label):
+        """Permite acceso a todos los módulos para superusuarios."""
+        return self.is_superuser
+
     class Meta:
         """Metadatos del modelo Usuario."""
         db_table = 'Usuarios'
@@ -149,12 +164,12 @@ class Vehiculo(models.Model):
     Campos:
         id_vehiculos: Identificador único del vehículo
         placa: Placa del vehículo
-        empresa: ID de la empresa a la que pertenece el vehículo
+        empresa: Nombre de la empresa a la que pertenece el vehículo
         disponibilidad: Indica si el vehículo está disponible
     """
     id_vehiculos = models.AutoField(primary_key=True, db_column='id_vehiculos')
     placa = models.CharField(max_length=20, db_column='placa', unique=True)
-    empresa = models.IntegerField(db_column='empresa')
+    empresa = models.CharField(max_length=100, db_column='empresa')
     disponibilidad = models.BooleanField(default=True, db_column='disponibilidad')
 
     def clean(self):
@@ -197,7 +212,7 @@ class Conductor(models.Model):
         fecha_vencimiento_tecnomecanica: Fecha de vencimiento de la tecnomecánica
     """
     id_conductor = models.AutoField(primary_key=True, db_column='id_conductor')
-    id_vehiculos = models.ForeignKey(Vehiculo, on_delete=models.CASCADE, db_column='Vehiculos_id_vehiculos')
+    id_vehiculos = models.ForeignKey(Vehiculo, on_delete=models.CASCADE, db_column='Vehiculos_id_vehiculos', null=True, blank=True)
     nombre = models.CharField(max_length=100, db_column='nombre')
     licencia_conduccion = models.IntegerField(db_column='licencia_conduccion', unique=True)
     fecha_vencimiento_licencia = models.DateField(db_column='fecha_vencimiento_licencia', null=True, blank=True)
@@ -211,8 +226,6 @@ class Conductor(models.Model):
             raise ValidationError({'nombre': 'El nombre es requerido'})
         if not self.licencia_conduccion:
             raise ValidationError({'licencia_conduccion': 'La licencia de conducción es requerida'})
-        if not self.id_vehiculos:
-            raise ValidationError({'id_vehiculos': 'El vehículo es requerido'})
         if Conductor.objects.filter(licencia_conduccion=self.licencia_conduccion).exclude(pk=self.pk).exists():
             raise ValidationError({'licencia_conduccion': 'Esta licencia ya está registrada'})
 
@@ -322,8 +335,8 @@ class Tarifa(models.Model):
     
     Campos:
         id_tarifa: Identificador único de la tarifa
-        zona_origen: Zona de origen del viaje
-        zona_destino: Zona de destino del viaje
+        zona_origen: Zona de origen del viaje (varchar)
+        zona_destino: Zona de destino del viaje (varchar)
         precio_base: Precio base del viaje
         precio_km: Precio por kilómetro adicional
         activa: Indica si la tarifa está activa
@@ -331,8 +344,8 @@ class Tarifa(models.Model):
         actualizado_por: Usuario que realizó la última actualización
     """
     id_tarifa = models.AutoField(primary_key=True, db_column='id_tarifa')
-    zona_origen = models.ForeignKey(Zona, on_delete=models.PROTECT, related_name='tarifas_origen', db_column='Zonas_id_origen')
-    zona_destino = models.ForeignKey(Zona, on_delete=models.PROTECT, related_name='tarifas_destino', db_column='Zonas_id_destino')
+    zona_origen = models.CharField(max_length=100, db_column='zona_origen')
+    zona_destino = models.CharField(max_length=100, db_column='zona_destino')
     precio_base = models.DecimalField(max_digits=10, decimal_places=2, db_column='precio_base')
     precio_km = models.DecimalField(max_digits=10, decimal_places=2, db_column='precio_km')
     activa = models.BooleanField(default=True, db_column='activa')

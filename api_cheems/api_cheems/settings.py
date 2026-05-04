@@ -104,6 +104,13 @@ WSGI_APPLICATION = 'api_cheems.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+print("DB_ENGINE:", os.getenv('DB_ENGINE'))
+print("DB_NAME:", os.getenv('DB_NAME'))
+print("DB_USER:", os.getenv('DB_USER'))
+print("DB_PASSWORD:", os.getenv('DB_PASSWORD'))
+print("DB_HOST:", os.getenv('DB_HOST'))
+print("DB_PORT:", os.getenv('DB_PORT'))
+
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE'),
