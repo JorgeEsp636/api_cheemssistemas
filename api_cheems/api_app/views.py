@@ -21,6 +21,9 @@ from django.db import transaction
 from django.http import HttpResponse
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied
+import json
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 class UsuarioList(generics.ListCreateAPIView):
     """
@@ -1394,3 +1397,140 @@ class UsuarioActualView(APIView):
     def get(self, request):
         serializer = UsuarioSerializer(request.user)
         return Response(serializer.data)
+
+
+class ChatGeminiView(APIView):
+    """
+    Proxifica generateContent de Gemini para no exponer la API key en el cliente.
+    POST: { "messages": [{"role":"user"|"assistant","content":"..."}], "language": "es"|"en" }
+    """
+    permission_classes = [IsAuthenticated]
+    MAX_MESSAGES = 24
+
+    def post(self, request):
+        api_key = getattr(settings, 'GEMINI_API_KEY', None) or ''
+        if not api_key.strip():
+            return Response(
+                {'detail': 'El asistente no está configurado en el servidor (GEMINI_API_KEY).'},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        model = getattr(settings, 'GEMINI_MODEL', None) or 'gemini-flash-latest'
+        language = (request.data.get('language') or 'es').lower()
+        if language not in ('es', 'en'):
+            return Response(
+                {'detail': 'language debe ser "es" o "en".'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        messages = request.data.get('messages')
+        if not isinstance(messages, list) or len(messages) == 0:
+            return Response(
+                {'detail': 'Se requiere "messages" como lista no vacía.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        trimmed = messages[-self.MAX_MESSAGES :]
+        contents = []
+        for m in trimmed:
+            if not isinstance(m, dict):
+                continue
+            role = m.get('role')
+            content = m.get('content')
+            if role not in ('user', 'assistant') or not isinstance(content, str):
+                continue
+            text = content.strip()
+            if not text:
+                continue
+            gemini_role = 'model' if role == 'assistant' else 'user'
+            contents.append({'role': gemini_role, 'parts': [{'text': text}]})
+
+        if not contents:
+            return Response(
+                {'detail': 'No hay mensajes válidos para enviar.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if contents[-1]['role'] != 'user':
+            return Response(
+                {'detail': 'El último mensaje debe ser del usuario.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if language == 'es':
+            system_text = (
+                'Eres el asistente virtual de CHEEMS Transport. '
+                'CHEEMS es una aplicación de información sobre transporte público colectivo (buses): '
+                'consulta de rutas, tarifas, conductores, buses y atención PQRS. '
+                'No es un servicio de fletes, carga, logística de mercancía ni transporte privado de mudanzas. '
+                'Si el usuario pregunta por esos temas, aclara amablemente que la app solo cubre transporte público de pasajeros en bus. '
+                'Responde de forma clara y breve. '
+                'Responde siempre y únicamente en español, aunque el usuario escriba en otro idioma.'
+            )
+        else:
+            system_text = (
+                'You are the virtual assistant for CHEEMS Transport. '
+                'CHEEMS is an app for public bus transit information: routes, fares, drivers, buses, and PQRS support. '
+                'It is not freight shipping, cargo logistics, merchandise haulage, or private moving services. '
+                'If users ask about those topics, politely clarify that the app only covers public passenger bus transport. '
+                'Reply clearly and concisely. '
+                'Always respond only in English, even if the user writes in another language.'
+            )
+
+        payload = {
+            'systemInstruction': {'parts': [{'text': system_text}]},
+            'contents': contents,
+        }
+
+        url = (
+            f'https://generativelanguage.googleapis.com/v1beta/models/'
+            f'{model}:generateContent'
+        )
+        req = Request(
+            url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={
+                'Content-Type': 'application/json',
+                'X-goog-api-key': api_key.strip(),
+            },
+            method='POST',
+        )
+
+        try:
+            with urlopen(req, timeout=60) as resp:
+                raw = resp.read().decode('utf-8')
+        except HTTPError as e:
+            return Response(
+                {'detail': 'Error al contactar el servicio de IA.', 'status': e.code},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        except URLError:
+            return Response(
+                {'detail': 'No se pudo conectar con el servicio de IA.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return Response(
+                {'detail': 'Respuesta inválida del servicio de IA.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        try:
+            parts = data['candidates'][0]['content']['parts']
+            reply = parts[0].get('text', '').strip()
+        except (KeyError, IndexError, TypeError):
+            return Response(
+                {'detail': 'El modelo no devolvió texto utilizable.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        if not reply:
+            return Response(
+                {'detail': 'El modelo devolvió una respuesta vacía.'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response({'reply': reply})

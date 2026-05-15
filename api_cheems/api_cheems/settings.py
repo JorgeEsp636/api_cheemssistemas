@@ -15,11 +15,15 @@ from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
-load_dotenv()
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Cargar .env: en este repo suele estar junto a settings.py; si no, junto a manage.py
+_package_env = Path(__file__).resolve().parent / '.env'
+if _package_env.is_file():
+    load_dotenv(_package_env)
+else:
+    load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
@@ -230,3 +234,7 @@ SECURE_REFERRER_POLICY = 'same-origin'
 # Configuración para IIS
 USE_IIS = True
 IIS_SSL_PORT = 443
+
+# Google Gemini (asistente de chat; la clave solo en entorno, nunca en el repo)
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-flash-latest')

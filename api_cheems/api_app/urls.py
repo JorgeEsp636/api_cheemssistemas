@@ -51,7 +51,7 @@ from .views import (
     DashboardEmpresaView, EstadisticaEmpresaView,
     VersionSistemaList, VersionSistemaDetail,
     PQRSList, PQRSDetail, PQRSAdminList,
-    RegistroUsuarioView, UsuarioActualView
+    RegistroUsuarioView, UsuarioActualView, ChatGeminiView
 )
 
 # Definición de las rutas URL de la API
@@ -61,6 +61,7 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('registro/', RegistroUsuarioView.as_view(), name='registro'),
     path('usuarios/me/', UsuarioActualView.as_view(), name='usuario-actual'),
+    path('chat/', ChatGeminiView.as_view(), name='chat-gemini'),
     
     # Rutas para usuarios
     path('usuarios/', UsuarioList.as_view(), name='usuario-list'),
