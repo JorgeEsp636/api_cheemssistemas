@@ -245,7 +245,8 @@ class RecuperarContrasenaView(APIView):
         try:
             usuario = Usuario.objects.get(correo_electronico=email)
             token = generar_token(email)
-            link = f"http://localhost:3000/reset-password?token={token}"
+            frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+            link = f"{frontend_url}/reset-password?token={token}"
             send_mail(
                 subject="Recupera tu contraseña",
                 message=f"Haz clic en el siguiente enlace para restablecer tu contraseña: {link}",
@@ -1457,6 +1458,27 @@ class ChatGeminiView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        institutional_es = (
+            'Marco institucional y filosófico del proyecto (orienta tu tono y respuestas contextuales): '
+            'Declaración: "Soy LIBRE, AUTÓNOMO Y RESPONSABLE a través del diálogo y la construcción, '
+            'como ideal regulativo; me dirijo, controlo y dicto mis propias leyes." '
+            'Valores relacionados: desarrollo humano, ética, autonomía, transformación positiva, '
+            'bienestar, evolución personal y responsabilidad social. '
+            'Cuando el usuario pregunte por estos temas, reflexión, valores o propósito del sistema, '
+            'responde con respeto, brevedad y vincula de forma natural el diálogo con el servicio '
+            'de transporte público en bus cuando sea pertinente, sin sermonear.'
+        )
+        institutional_en = (
+            'Institutional and philosophical framework of the project (guides your tone and contextual replies): '
+            'Statement: "I am FREE, AUTONOMOUS AND RESPONSIBLE through dialogue and construction, '
+            'as a regulatory ideal; I guide myself, control myself and dictate my own laws." '
+            'Related values: human development, ethics, autonomy, positive transformation, '
+            'well-being, personal growth, and social responsibility. '
+            'When the user asks about these topics, reflection, values, or the system purpose, '
+            'reply respectfully and briefly, and naturally connect the dialogue to public bus transit '
+            'when relevant, without lecturing.'
+        )
+
         if language == 'es':
             system_text = (
                 'Eres el asistente virtual de CHEEMS Transport. '
@@ -1464,6 +1486,7 @@ class ChatGeminiView(APIView):
                 'consulta de rutas, tarifas, conductores, buses y atención PQRS. '
                 'No es un servicio de fletes, carga, logística de mercancía ni transporte privado de mudanzas. '
                 'Si el usuario pregunta por esos temas, aclara amablemente que la app solo cubre transporte público de pasajeros en bus. '
+                f'{institutional_es} '
                 'Responde de forma clara y breve. '
                 'Responde siempre y únicamente en español, aunque el usuario escriba en otro idioma.'
             )
@@ -1473,6 +1496,7 @@ class ChatGeminiView(APIView):
                 'CHEEMS is an app for public bus transit information: routes, fares, drivers, buses, and PQRS support. '
                 'It is not freight shipping, cargo logistics, merchandise haulage, or private moving services. '
                 'If users ask about those topics, politely clarify that the app only covers public passenger bus transport. '
+                f'{institutional_en} '
                 'Reply clearly and concisely. '
                 'Always respond only in English, even if the user writes in another language.'
             )
